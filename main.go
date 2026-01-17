@@ -14,6 +14,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/mmcloughlin/geohash"
+
+	"meshcore-map-api/internal/geocoder"
 )
 
 type RadioInfo struct {
@@ -51,6 +53,8 @@ type ErrorResponse struct {
 
 var validate *validator.Validate
 var db driver.Conn
+var geo *geocoder.Geocoder
+var storePreciseLocation bool
 
 func init() {
 	validate = validator.New()
@@ -64,6 +68,17 @@ func init() {
 	db, err = initClickHouse()
 	if err != nil {
 		log.Fatalf("Failed to initialize ClickHouse: %v", err)
+	}
+
+	log.Println("Loading geocoding data...")
+	geo = geocoder.GetInstance()
+	log.Println("Geocoding data loaded successfully")
+
+	storePreciseLocation = os.Getenv("STORE_PRECISE_LOCATION") != "false"
+	if storePreciseLocation {
+		log.Println("Storing precise location (latitude/longitude)")
+	} else {
+		log.Println("Storing only geohash (precise location disabled)")
 	}
 }
 
@@ -157,7 +172,17 @@ func insertReportData(report ReportRequest) error {
 			return fmt.Errorf("failed to parse timestamp: %w", err)
 		}
 
-		geoHash := geohash.Encode(device.Latitude, device.Longitude)
+		geoHash := geohash.EncodeWithPrecision(device.Latitude, device.Longitude, 8)
+		cityCode, districtCode, countryCode := geo.ReverseGeocode(device.Latitude, device.Longitude)
+
+		var lat, lon interface{}
+		if storePreciseLocation {
+			lat = device.Latitude
+			lon = device.Longitude
+		} else {
+			lat = nil
+			lon = nil
+		}
 
 		err = batch.Append(
 			timestamp,
@@ -171,12 +196,12 @@ func insertReportData(report ReportRequest) error {
 			device.DeviceName,
 			device.RSSI,
 			device.SNR,
-			device.Latitude,
-			device.Longitude,
+			lat,
+			lon,
 			geoHash,
-			"",
-			"",
-			"",
+			cityCode,
+			districtCode,
+			countryCode,
 			device.ScanSource,
 			time.Now(),
 		)

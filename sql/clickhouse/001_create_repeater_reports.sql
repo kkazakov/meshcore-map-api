@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS repeater_reports
     rssi Int16 CODEC(ZSTD(1)),
     snr Float32 CODEC(ZSTD(1)),
     
-    latitude Float64 CODEC(Gorilla, ZSTD(1)),
-    longitude Float64 CODEC(Gorilla, ZSTD(1)),
+    latitude Nullable(Float64) CODEC(Gorilla, ZSTD(1)),
+    longitude Nullable(Float64) CODEC(Gorilla, ZSTD(1)),
     
     geohash String CODEC(ZSTD(1)),
     
