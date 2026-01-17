@@ -18,6 +18,22 @@ fi
 echo "✓ .env file found"
 
 echo ""
+echo "=== Downloading geocoding data ==="
+if [ ! -d "data" ]; then
+    mkdir -p data
+fi
+
+if [ ! -f "data/cities15000.txt" ]; then
+    echo "Downloading cities15000.zip from GeoNames..."
+    curl -L -o data/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
+    echo "Extracting archive..."
+    cd data && unzip -o cities15000.zip && cd ..
+    echo "✓ Geocoding data downloaded and extracted"
+else
+    echo "✓ Geocoding data already exists"
+fi
+
+echo ""
 echo "=== Building Go project ==="
 go build -o server
 echo "✓ Go build completed"
