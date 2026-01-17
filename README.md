@@ -12,7 +12,7 @@ Lightweight HTTP API server for processing and storing Meshcore repeater reports
 ### Installation
 
 1. Clone the repository
-2. Copy `.env.example` to `.env` and configure ClickHouse connection
+2. Copy `.env.example` to `.env` and configure environment variables (see Configuration section)
 3. Download geocoding data:
 ```bash
 mkdir -p data
@@ -37,6 +37,26 @@ go build -o server
 ```
 
 The server runs on port 8080 by default.
+
+## Configuration
+
+The application uses environment variables configured in the `.env` file:
+
+### ClickHouse Connection
+
+- `CLICKHOUSE_HOST` - ClickHouse server hostname (default: localhost)
+- `CLICKHOUSE_PORT` - ClickHouse server port (default: 9000)
+- `CLICKHOUSE_DATABASE` - Database name (default: meshcore)
+- `CLICKHOUSE_USER` - Database username
+- `CLICKHOUSE_PASSWORD` - Database password
+
+### Privacy Settings
+
+- `STORE_PRECISE_LOCATION` - Controls storage of precise coordinates (default: true)
+  - `true` - Stores exact latitude and longitude values
+  - `false` - Stores NULL for lat/lon, only geohash is saved (privacy mode)
+  
+Note: Geohash is always calculated and stored regardless of this setting, providing approximate location data with 8-character precision.
 
 ## Features
 
