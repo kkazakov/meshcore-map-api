@@ -1,0 +1,13 @@
+{
+    "metadata": {
+        "name": "Krasi T114",
+        "pubkey": "somepublickeyhere",
+        "radio": {
+            "bw": 869.618,
+            "sf": 8,
+            "cr": 8,
+            "tx": 22
+        }
+    },
+    "data": [{"deviceId":"99999999c5e9fcc91b30f487ca904e2f9908aecff18cc3b87ceddb436926443d","deviceName":"Fake repeater","rssi":-98,"snr":11.25,"timestamp":"2026-01-16T21:41:52.615226","latitude":42.3674757,"longitude":23.1714001,"scanSource":"active_ping_response"}]
+}

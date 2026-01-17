@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "meshcore-map-api",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
