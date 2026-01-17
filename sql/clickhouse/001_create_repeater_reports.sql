@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS repeater_reports
     repeater_name LowCardinality(String) CODEC(ZSTD(1)),
     repeater_pubkey FixedString(64) CODEC(ZSTD(1)),
     
+    radio_freq Float32 CODEC(ZSTD(1)),
     radio_bw Float32 CODEC(ZSTD(1)),
     radio_sf UInt8 CODEC(ZSTD(1)),
     radio_cr UInt8 CODEC(ZSTD(1)),

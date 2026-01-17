@@ -19,10 +19,11 @@ import (
 )
 
 type RadioInfo struct {
-	BW float64 `json:"bw" validate:"required,gt=0"`
-	SF int     `json:"sf" validate:"required,gt=0"`
-	CR int     `json:"cr" validate:"required,gt=0"`
-	TX int     `json:"tx" validate:"required,gt=0"`
+	Freq float64 `json:"freq" validate:"required,min=433,max=928"`
+	BW   float64 `json:"bw" validate:"required,gt=0"`
+	SF   int     `json:"sf" validate:"required,gt=0"`
+	CR   int     `json:"cr" validate:"required,gt=0"`
+	TX   int     `json:"tx" validate:"required,gt=0"`
 }
 
 type Metadata struct {
@@ -188,6 +189,7 @@ func insertReportData(report ReportRequest) error {
 			timestamp,
 			report.Metadata.Name,
 			report.Metadata.Pubkey,
+			report.Metadata.Radio.Freq,
 			report.Metadata.Radio.BW,
 			report.Metadata.Radio.SF,
 			report.Metadata.Radio.CR,
