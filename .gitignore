@@ -1,3 +1,4 @@
 server
 __debug_*
 server.log
+.env
