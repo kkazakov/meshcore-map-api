@@ -187,6 +187,8 @@ func insertReportData(report ReportRequest) error {
 
 		err = batch.Append(
 			timestamp,
+			device.DeviceName,
+			device.DeviceID,
 			report.Metadata.Name,
 			report.Metadata.Pubkey,
 			report.Metadata.Radio.Freq,
