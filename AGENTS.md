@@ -238,3 +238,8 @@ type ErrorResponse struct {
 - All validation returns descriptive errors with field paths
 - Timestamp validation accepts multiple ISO8601/RFC3339 formats
 - No database layer currently - handlers just log and acknowledge
+
+## General instructions
+
+- Don't create any comments. Keep the code clean.
+- Don't add emojis anywhere, including documentation.

@@ -1,12 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type RadioInfo struct {
@@ -81,7 +82,7 @@ func validateDeviceData(data DeviceData, index int) error {
 	if strings.TrimSpace(data.Timestamp) == "" {
 		return fmt.Errorf("data[%d].timestamp is required", index)
 	}
-	// Validate timestamp format - try multiple common formats
+
 	validFormats := []string{
 		time.RFC3339,
 		time.RFC3339Nano,
@@ -98,11 +99,9 @@ func validateDeviceData(data DeviceData, index int) error {
 	if !validTimestamp {
 		return fmt.Errorf("data[%d].timestamp must be in a valid ISO8601/RFC3339 format", index)
 	}
-	// Validate latitude range
 	if data.Latitude < -90 || data.Latitude > 90 {
 		return fmt.Errorf("data[%d].latitude must be between -90 and 90", index)
 	}
-	// Validate longitude range
 	if data.Longitude < -180 || data.Longitude > 180 {
 		return fmt.Errorf("data[%d].longitude must be between -180 and 180", index)
 	}
@@ -127,42 +126,42 @@ func validateReport(report ReportRequest) error {
 	return nil
 }
 
-func handleReport(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Method not allowed"})
-		return
-	}
-
+func handleReport(c *gin.Context) {
 	var report ReportRequest
-	if err := json.NewDecoder(r.Body).Decode(&report); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid JSON: " + err.Error()})
+
+	if err := c.ShouldBindJSON(&report); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON: " + err.Error()})
 		return
 	}
-	defer r.Body.Close()
 
-	// Validate the report
 	if err := validateReport(report); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	log.Printf("Received valid report from: %s\n", report.Metadata.Name)
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
 func main() {
-	http.HandleFunc("/report", handleReport)
+	router := gin.Default()
+
+	router.HandleMethodNotAllowed = true
+
+	router.POST("/report", handleReport)
+
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Route not found"})
+	})
+
+	router.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+	})
 
 	port := "8080"
 	log.Printf("Server starting on port %s...\n", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
 }
