@@ -7,6 +7,7 @@ Lightweight HTTP API server for processing and storing Meshcore repeater reports
 ### Prerequisites
 
 - Go 1.25.5+
+- Docker and Docker daemon running
 - ClickHouse server (see `docker/clickhouse/docker-compose.yaml`)
 
 ### Installation
@@ -25,18 +26,53 @@ cd data && unzip cities15000.zip && cd ..
 go mod download
 ```
 
-5. Build the server:
-```bash
-go build -o server
-```
-
 ### Running
 
+#### Development Mode
+
 ```bash
+go run main.go
+```
+
+Or build and run locally:
+
+```bash
+go build -o server
 ./server
 ```
 
 The server runs on port 8080 by default.
+
+#### Production Deployment (Docker)
+
+Deploy using the automated deployment script:
+
+```bash
+./deploy.sh
+```
+
+This script will:
+1. Verify `.env` file exists (required)
+2. Build the Go binary
+3. Build a Docker image
+4. Stop and remove any existing container
+5. Start a new container with `--restart unless-stopped` policy
+
+**Prerequisites for deployment:**
+- Docker installed and running
+- `.env` file configured in project root
+- Port 8080 available
+
+**Manage the deployed container:**
+
+```bash
+docker logs -f meshcore-map-api
+docker stop meshcore-map-api
+docker restart meshcore-map-api
+docker rm -f meshcore-map-api
+```
+
+To redeploy after code changes, simply run `./deploy.sh` again.
 
 ## Features
 
