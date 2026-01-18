@@ -174,7 +174,7 @@ func insertReportData(report ReportRequest) error {
 		}
 
 		geoHash := geohash.EncodeWithPrecision(device.Latitude, device.Longitude, 8)
-		cityCode, districtCode, countryCode := geo.ReverseGeocode(device.Latitude, device.Longitude)
+		regionCode, districtCode, countryCode := geo.ReverseGeocode(device.Latitude, device.Longitude)
 
 		var lat, lon interface{}
 		if storePreciseLocation {
@@ -203,7 +203,7 @@ func insertReportData(report ReportRequest) error {
 			lat,
 			lon,
 			geoHash,
-			cityCode,
+			regionCode,
 			districtCode,
 			countryCode,
 			device.ScanSource,
