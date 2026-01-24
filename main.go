@@ -48,6 +48,23 @@ type ReportRequest struct {
 	Data     []DeviceData `json:"data" validate:"required,min=1,dive"`
 }
 
+type RepeaterMetadata struct {
+	Name   string `json:"name"`
+	Pubkey string `json:"pubkey"`
+}
+
+type RepeaterData struct {
+	PublicKey string  `json:"publicKey" validate:"required,len=64,hexadecimal"`
+	Name      string  `json:"name" validate:"required"`
+	Lat       float64 `json:"lat" validate:"required,min=-90,max=90"`
+	Lon       float64 `json:"lon" validate:"required,min=-180,max=180"`
+}
+
+type RepeaterRequest struct {
+	Metadata RepeaterMetadata `json:"metadata"`
+	Data     []RepeaterData   `json:"data" validate:"required,min=1,dive"`
+}
+
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
@@ -159,6 +176,30 @@ func handleReport(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+func handleRepeaters(c *gin.Context) {
+	var request RepeaterRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON: " + err.Error()})
+		return
+	}
+
+	if err := validate.Struct(&request); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	log.Printf("Received valid repeater data with %d repeaters\n", len(request.Data))
+
+	if err := insertRepeaterData(request); err != nil {
+		log.Printf("Error inserting repeater data: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to store repeater data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
 func insertReportData(report ReportRequest) error {
 	ctx := context.Background()
 
@@ -222,6 +263,38 @@ func insertReportData(report ReportRequest) error {
 	return nil
 }
 
+func insertRepeaterData(request RepeaterRequest) error {
+	ctx := context.Background()
+
+	batch, err := db.PrepareBatch(ctx, "INSERT INTO repeaters")
+	if err != nil {
+		return fmt.Errorf("failed to prepare batch: %w", err)
+	}
+
+	now := time.Now()
+
+	for _, repeater := range request.Data {
+		err = batch.Append(
+			repeater.PublicKey,
+			repeater.Name,
+			repeater.Lat,
+			repeater.Lon,
+			now,
+			now,
+		)
+
+		if err != nil {
+			return fmt.Errorf("failed to append to batch: %w", err)
+		}
+	}
+
+	if err := batch.Send(); err != nil {
+		return fmt.Errorf("failed to send batch: %w", err)
+	}
+
+	return nil
+}
+
 func parseTimestamp(ts string) (time.Time, error) {
 	validFormats := []string{
 		time.RFC3339,
@@ -243,6 +316,7 @@ func main() {
 	router.HandleMethodNotAllowed = true
 
 	router.POST("/report", handleReport)
+	router.POST("/repeaters", handleRepeaters)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Route not found"})
