@@ -111,23 +111,38 @@ func TestValidateMetadata(t *testing.T) {
 		valid    bool
 	}{
 		{
-			name:     "Valid metadata",
-			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: validRadio},
+			name:     "Valid metadata with coordinates",
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: validRadio, Latitude: "42.0", Longitude: "23.0"},
+			valid:    true,
+		},
+		{
+			name:     "Valid metadata without coordinates",
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: validRadio, Latitude: "", Longitude: ""},
 			valid:    true,
 		},
 		{
 			name:     "Empty name",
-			metadata: Metadata{Name: "", Pubkey: "abc123", Radio: validRadio},
+			metadata: Metadata{Name: "", Pubkey: "abc123", Radio: validRadio, Latitude: "42.0", Longitude: "23.0"},
 			valid:    false,
 		},
 		{
 			name:     "Empty pubkey",
-			metadata: Metadata{Name: "test-node", Pubkey: "", Radio: validRadio},
+			metadata: Metadata{Name: "test-node", Pubkey: "", Radio: validRadio, Latitude: "42.0", Longitude: "23.0"},
 			valid:    false,
 		},
 		{
 			name:     "Invalid radio",
-			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 0, SF: 7, CR: 5, TX: 20}},
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 0, SF: 7, CR: 5, TX: 20}, Latitude: "42.0", Longitude: "23.0"},
+			valid:    false,
+		},
+		{
+			name:     "Invalid latitude",
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: validRadio, Latitude: "91.0", Longitude: "23.0"},
+			valid:    false,
+		},
+		{
+			name:     "Invalid longitude",
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: validRadio, Latitude: "42.0", Longitude: "181.0"},
 			valid:    false,
 		},
 	}
@@ -278,9 +293,11 @@ func TestValidateDeviceData(t *testing.T) {
 
 func TestValidateReportRequest(t *testing.T) {
 	validMetadata := Metadata{
-		Name:   "test-node",
-		Pubkey: "abc123",
-		Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+		Name:      "test-node",
+		Pubkey:    "abc123",
+		Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+		Latitude:  "42.0",
+		Longitude: "23.0",
 	}
 
 	validDeviceData := DeviceData{
@@ -298,25 +315,45 @@ func TestValidateReportRequest(t *testing.T) {
 		valid  bool
 	}{
 		{
-			name: "Valid report",
+			name: "Valid report with data",
 			report: ReportRequest{
-				Metadata: validMetadata,
-				Data:     []DeviceData{validDeviceData},
+				Metadata: Metadata{
+					Name:      "test-node",
+					Pubkey:    "abc123",
+					Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Latitude:  "",
+					Longitude: "",
+				},
+				Data: []DeviceData{validDeviceData},
 			},
 			valid: true,
 		},
 		{
-			name: "Empty data array",
+			name: "Empty data array (dead zone) with coordinates",
 			report: ReportRequest{
 				Metadata: validMetadata,
 				Data:     []DeviceData{},
+			},
+			valid: true,
+		},
+		{
+			name: "Empty data array (dead zone) without coordinates",
+			report: ReportRequest{
+				Metadata: Metadata{
+					Name:      "test-node",
+					Pubkey:    "abc123",
+					Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Latitude:  "",
+					Longitude: "",
+				},
+				Data: []DeviceData{},
 			},
 			valid: false,
 		},
 		{
 			name: "Invalid metadata",
 			report: ReportRequest{
-				Metadata: Metadata{Name: "", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20}},
+				Metadata: Metadata{Name: "", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20}, Latitude: "42.0", Longitude: "23.0"},
 				Data:     []DeviceData{validDeviceData},
 			},
 			valid: false,
@@ -359,9 +396,11 @@ func TestHandleReport(t *testing.T) {
 
 	validReport := ReportRequest{
 		Metadata: Metadata{
-			Name:   "test-node",
-			Pubkey: "abc123",
-			Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+			Name:      "test-node",
+			Pubkey:    "abc123",
+			Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+			Latitude:  "",
+			Longitude: "",
 		},
 		Data: []DeviceData{
 			{
@@ -383,7 +422,7 @@ func TestHandleReport(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "Valid report",
+			name:           "Valid report with data",
 			payload:        validReport,
 			expectedStatus: http.StatusOK,
 		},
@@ -395,24 +434,42 @@ func TestHandleReport(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name: "Empty data array",
+			name: "Empty data array (dead zone) with coordinates",
 			payload: ReportRequest{
 				Metadata: Metadata{
-					Name:   "test-node",
-					Pubkey: "abc123",
-					Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Name:      "test-node",
+					Pubkey:    "abc123",
+					Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Latitude:  "42.0",
+					Longitude: "23.0",
+				},
+				Data: []DeviceData{},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Empty data array (dead zone) without coordinates",
+			payload: ReportRequest{
+				Metadata: Metadata{
+					Name:      "test-node",
+					Pubkey:    "abc123",
+					Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Latitude:  "",
+					Longitude: "",
 				},
 				Data: []DeviceData{},
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name: "Invalid latitude",
+			name: "Invalid latitude in device data",
 			payload: ReportRequest{
 				Metadata: Metadata{
-					Name:   "test-node",
-					Pubkey: "abc123",
-					Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Name:      "test-node",
+					Pubkey:    "abc123",
+					Radio:     RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Latitude:  "",
+					Longitude: "",
 				},
 				Data: []DeviceData{
 					{
