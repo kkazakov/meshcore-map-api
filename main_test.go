@@ -59,32 +59,32 @@ func TestValidateRadioInfo(t *testing.T) {
 	}{
 		{
 			name:  "Valid radio info",
-			radio: RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20},
+			radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
 			valid: true,
 		},
 		{
 			name:  "Zero BW",
-			radio: RadioInfo{BW: 0, SF: 7, CR: 5, TX: 20},
+			radio: RadioInfo{Freq: 915.0, BW: 0, SF: 7, CR: 5, TX: 20},
 			valid: false,
 		},
 		{
 			name:  "Negative BW",
-			radio: RadioInfo{BW: -125.0, SF: 7, CR: 5, TX: 20},
+			radio: RadioInfo{Freq: 915.0, BW: -125.0, SF: 7, CR: 5, TX: 20},
 			valid: false,
 		},
 		{
 			name:  "Zero SF",
-			radio: RadioInfo{BW: 125.0, SF: 0, CR: 5, TX: 20},
+			radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 0, CR: 5, TX: 20},
 			valid: false,
 		},
 		{
 			name:  "Zero CR",
-			radio: RadioInfo{BW: 125.0, SF: 7, CR: 0, TX: 20},
+			radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 0, TX: 20},
 			valid: false,
 		},
 		{
 			name:  "Zero TX",
-			radio: RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 0},
+			radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 0},
 			valid: false,
 		},
 	}
@@ -103,7 +103,7 @@ func TestValidateRadioInfo(t *testing.T) {
 }
 
 func TestValidateMetadata(t *testing.T) {
-	validRadio := RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20}
+	validRadio := RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20}
 
 	tests := []struct {
 		name     string
@@ -127,7 +127,7 @@ func TestValidateMetadata(t *testing.T) {
 		},
 		{
 			name:     "Invalid radio",
-			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: RadioInfo{BW: 0, SF: 7, CR: 5, TX: 20}},
+			metadata: Metadata{Name: "test-node", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 0, SF: 7, CR: 5, TX: 20}},
 			valid:    false,
 		},
 	}
@@ -280,7 +280,7 @@ func TestValidateReportRequest(t *testing.T) {
 	validMetadata := Metadata{
 		Name:   "test-node",
 		Pubkey: "abc123",
-		Radio:  RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20},
+		Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
 	}
 
 	validDeviceData := DeviceData{
@@ -316,7 +316,7 @@ func TestValidateReportRequest(t *testing.T) {
 		{
 			name: "Invalid metadata",
 			report: ReportRequest{
-				Metadata: Metadata{Name: "", Pubkey: "abc123", Radio: RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20}},
+				Metadata: Metadata{Name: "", Pubkey: "abc123", Radio: RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20}},
 				Data:     []DeviceData{validDeviceData},
 			},
 			valid: false,
@@ -361,7 +361,7 @@ func TestHandleReport(t *testing.T) {
 		Metadata: Metadata{
 			Name:   "test-node",
 			Pubkey: "abc123",
-			Radio:  RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20},
+			Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
 		},
 		Data: []DeviceData{
 			{
@@ -400,7 +400,7 @@ func TestHandleReport(t *testing.T) {
 				Metadata: Metadata{
 					Name:   "test-node",
 					Pubkey: "abc123",
-					Radio:  RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
 				},
 				Data: []DeviceData{},
 			},
@@ -412,7 +412,7 @@ func TestHandleReport(t *testing.T) {
 				Metadata: Metadata{
 					Name:   "test-node",
 					Pubkey: "abc123",
-					Radio:  RadioInfo{BW: 125.0, SF: 7, CR: 5, TX: 20},
+					Radio:  RadioInfo{Freq: 915.0, BW: 125.0, SF: 7, CR: 5, TX: 20},
 				},
 				Data: []DeviceData{
 					{

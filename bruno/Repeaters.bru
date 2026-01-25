@@ -1,0 +1,35 @@
+meta {
+  name: Repeaters
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{BASE_URL}}/repeaters
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "metadata": {
+          "name": "Krasi T114",
+          "pubkey": "somepublickeyhere",
+          "radio": {
+              "freq": 869.618,
+              "bw": 62.5,
+              "sf": 8,
+              "cr": 8,
+              "tx": 22
+          }
+      },
+      "data": [{"publicKey":"99999999c5e9fcc91b30f487ca904e2f9908aecff18cc3b87ceddb436926443d","name":"Fake repeater", "lat":42.3674757,"lon":23.1714001,"scanSource":"active_ping_response"}]
+  }
+  
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

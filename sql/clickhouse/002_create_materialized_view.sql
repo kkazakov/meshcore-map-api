@@ -9,7 +9,7 @@ AS SELECT
     device_id,
     device_name,
     geohash,
-    city_code,
+    region_code,
     district_code,
     country_code,
     count() AS report_count,
@@ -19,4 +19,4 @@ AS SELECT
     max(rssi) AS max_rssi
 FROM repeater_reports
 GROUP BY hour, repeater_pubkey, repeater_name, device_id, device_name, 
-         geohash, city_code, district_code, country_code;
+          geohash, region_code, district_code, country_code;

@@ -5,6 +5,10 @@ CREATE TABLE IF NOT EXISTS repeater_reports
     repeater_name LowCardinality(String) CODEC(ZSTD(1)),
     repeater_pubkey FixedString(64) CODEC(ZSTD(1)),
     
+    reporter_name LowCardinality(String) CODEC(ZSTD(1)),
+    reporter_pubkey FixedString(64) CODEC(ZSTD(1)),
+    
+    radio_freq Float32 CODEC(ZSTD(1)),
     radio_bw Float32 CODEC(ZSTD(1)),
     radio_sf UInt8 CODEC(ZSTD(1)),
     radio_cr UInt8 CODEC(ZSTD(1)),
@@ -21,7 +25,7 @@ CREATE TABLE IF NOT EXISTS repeater_reports
     
     geohash String CODEC(ZSTD(1)),
     
-    city_code LowCardinality(FixedString(3)) CODEC(ZSTD(1)),
+    region_code LowCardinality(FixedString(3)) CODEC(ZSTD(1)),
     district_code LowCardinality(FixedString(3)) CODEC(ZSTD(1)),
     country_code LowCardinality(FixedString(2)) CODEC(ZSTD(1)),
     

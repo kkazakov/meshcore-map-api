@@ -1,0 +1,37 @@
+meta {
+  name: Report none
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/report
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "metadata": {
+          "name": "Krasi T114",
+          "pubkey": "somepublickeyhere",
+          "radio": {
+              "freq": 869.618,
+              "bw": 62.5,
+              "sf": 8,
+              "cr": 8,
+              "tx": 22
+          },
+          "latitude": "1.23",
+          "longitude": "4.56"
+      },
+      "data": []
+  }
+  
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

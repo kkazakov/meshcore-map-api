@@ -112,7 +112,7 @@ func (g *Geocoder) loadCities() error {
 	return scanner.Err()
 }
 
-func (g *Geocoder) ReverseGeocode(lat, lon float64) (cityCode, districtCode, countryCode string) {
+func (g *Geocoder) ReverseGeocode(lat, lon float64) (regionCode, districtCode, countryCode string) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
@@ -147,9 +147,9 @@ func (g *Geocoder) ReverseGeocode(lat, lon float64) (cityCode, districtCode, cou
 
 	cityName := nearestCity.name
 	if len(cityName) > 3 {
-		cityCode = cityName[:3]
+		regionCode = cityName[:3]
 	} else {
-		cityCode = cityName
+		regionCode = cityName
 	}
 
 	districtCode = nearestCity.admin1Code
@@ -162,7 +162,7 @@ func (g *Geocoder) ReverseGeocode(lat, lon float64) (cityCode, districtCode, cou
 		countryCode = countryCode[:2]
 	}
 
-	return strings.ToUpper(cityCode), strings.ToUpper(districtCode), strings.ToUpper(countryCode)
+	return strings.ToUpper(regionCode), strings.ToUpper(districtCode), strings.ToUpper(countryCode)
 }
 
 func haversine(lat1, lon1, lat2, lon2 float64) float64 {
