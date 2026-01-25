@@ -27,9 +27,11 @@ type RadioInfo struct {
 }
 
 type Metadata struct {
-	Name   string    `json:"name" validate:"required"`
-	Pubkey string    `json:"pubkey" validate:"required"`
-	Radio  RadioInfo `json:"radio" validate:"required"`
+	Name      string    `json:"name" validate:"required"`
+	Pubkey    string    `json:"pubkey" validate:"required"`
+	Radio     RadioInfo `json:"radio" validate:"required"`
+	Latitude  string    `json:"latitude" validate:"omitempty,latitude"`
+	Longitude string    `json:"longitude" validate:"omitempty,longitude"`
 }
 
 type DeviceData struct {
@@ -45,7 +47,7 @@ type DeviceData struct {
 
 type ReportRequest struct {
 	Metadata Metadata     `json:"metadata" validate:"required"`
-	Data     []DeviceData `json:"data" validate:"required,min=1,dive"`
+	Data     []DeviceData `json:"data" validate:"required,dive"`
 }
 
 type RepeaterMetadata struct {
@@ -77,6 +79,9 @@ var storePreciseLocation bool
 func init() {
 	validate = validator.New()
 	validate.RegisterValidation("timestamp", validateTimestamp)
+	validate.RegisterValidation("latitude", validateLatitude)
+	validate.RegisterValidation("longitude", validateLongitude)
+	validate.RegisterStructValidation(ReportRequestStructLevelValidation, ReportRequest{})
 
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: Error loading .env file: %v", err)
@@ -152,6 +157,37 @@ func validateTimestamp(fl validator.FieldLevel) bool {
 	return false
 }
 
+func validateLatitude(fl validator.FieldLevel) bool {
+	coord := fl.Field().String()
+	lat, err := parseCoordinate(coord)
+	if err != nil {
+		return false
+	}
+	return lat >= -90 && lat <= 90
+}
+
+func validateLongitude(fl validator.FieldLevel) bool {
+	coord := fl.Field().String()
+	lon, err := parseCoordinate(coord)
+	if err != nil {
+		return false
+	}
+	return lon >= -180 && lon <= 180
+}
+
+func ReportRequestStructLevelValidation(sl validator.StructLevel) {
+	report := sl.Current().Interface().(ReportRequest)
+
+	if len(report.Data) == 0 {
+		if report.Metadata.Latitude == "" {
+			sl.ReportError(report.Metadata.Latitude, "Metadata.Latitude", "Latitude", "required", "")
+		}
+		if report.Metadata.Longitude == "" {
+			sl.ReportError(report.Metadata.Longitude, "Metadata.Longitude", "Longitude", "required", "")
+		}
+	}
+}
+
 func handleReport(c *gin.Context) {
 	var report ReportRequest
 
@@ -167,10 +203,18 @@ func handleReport(c *gin.Context) {
 
 	log.Printf("Received valid report from: %s\n", report.Metadata.Name)
 
-	if err := insertReportData(report); err != nil {
-		log.Printf("Error inserting report data: %v", err)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to store report"})
-		return
+	if len(report.Data) == 0 {
+		if err := insertDeadZoneData(report); err != nil {
+			log.Printf("Error inserting dead zone data: %v", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to store dead zone"})
+			return
+		}
+	} else {
+		if err := insertReportData(report); err != nil {
+			log.Printf("Error inserting report data: %v", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to store report"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
@@ -293,6 +337,83 @@ func insertRepeaterData(request RepeaterRequest) error {
 	}
 
 	return nil
+}
+
+func insertDeadZoneData(report ReportRequest) error {
+	ctx := context.Background()
+
+	lat, err := parseCoordinate(report.Metadata.Latitude)
+	if err != nil {
+		return fmt.Errorf("invalid latitude: %w", err)
+	}
+
+	lon, err := parseCoordinate(report.Metadata.Longitude)
+	if err != nil {
+		return fmt.Errorf("invalid longitude: %w", err)
+	}
+
+	geoHash := geohash.EncodeWithPrecision(lat, lon, 8)
+	regionCode, districtCode, countryCode := geo.ReverseGeocode(lat, lon)
+
+	var latitude, longitude interface{}
+	if storePreciseLocation {
+		latitude = lat
+		longitude = lon
+	} else {
+		latitude = nil
+		longitude = nil
+	}
+
+	err = db.Exec(ctx, `
+		INSERT INTO dead_zones (
+			timestamp,
+			reporter_name,
+			reporter_pubkey,
+			radio_freq,
+			radio_bw,
+			radio_sf,
+			radio_cr,
+			radio_tx,
+			latitude,
+			longitude,
+			geohash,
+			region_code,
+			district_code,
+			country_code,
+			ingested_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		time.Now(),
+		report.Metadata.Name,
+		report.Metadata.Pubkey,
+		report.Metadata.Radio.Freq,
+		report.Metadata.Radio.BW,
+		report.Metadata.Radio.SF,
+		report.Metadata.Radio.CR,
+		report.Metadata.Radio.TX,
+		latitude,
+		longitude,
+		geoHash,
+		regionCode,
+		districtCode,
+		countryCode,
+		time.Now(),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to insert dead zone data: %w", err)
+	}
+
+	return nil
+}
+
+func parseCoordinate(coord string) (float64, error) {
+	var f float64
+	_, err := fmt.Sscanf(coord, "%f", &f)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse coordinate: %w", err)
+	}
+	return f, nil
 }
 
 func parseTimestamp(ts string) (time.Time, error) {
