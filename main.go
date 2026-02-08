@@ -36,7 +36,7 @@ type Metadata struct {
 
 type DeviceData struct {
 	DeviceID   string  `json:"deviceId" validate:"required"`
-	DeviceName string  `json:"deviceName" validate:"required"`
+	DeviceName string  `json:"deviceName"`
 	RSSI       int     `json:"rssi"`
 	SNR        float64 `json:"snr"`
 	Timestamp  string  `json:"timestamp" validate:"required,timestamp"`
